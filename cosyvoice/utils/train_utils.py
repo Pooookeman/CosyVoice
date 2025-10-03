@@ -271,8 +271,6 @@ def batch_forward(model, batch, scaler, info_dict, ref_model=None, dpo_loss=None
             info_dict['loss_dict']["dpo_acc"] = dpo_acc
             info_dict['loss_dict']["chosen_reward"] = chosen_reward.mean()
             info_dict['loss_dict']["reject_reward"] = reject_reward.mean()
-            info_dict['loss_dict']["chosen_logps"] = chosen_logps.detach().mean().item()
-            info_dict['loss_dict']["rejected_logps"] = rejected_logps.detach().mean().item()
     return info_dict
 
 
@@ -337,14 +335,7 @@ def log_per_step(writer, info_dict):
             for k in ['epoch', 'lr', 'grad_norm']:
                 writer.add_scalar('{}/{}'.format(tag, k), info_dict[k], step + 1)
             for k, v in loss_dict.items():
-                value = v
-                if isinstance(value, torch.Tensor):
-                    if value.ndim > 0:
-                        value = value.mean()
-                    if value.requires_grad:
-                        value = value.detach()
-                    value = value.item()
-                writer.add_scalar('{}/{}'.format(tag, k), value, step + 1)
+                writer.add_scalar('{}/{}'.format(tag, k), v, step + 1)
 
     # TRAIN & CV, Shell log (stdout)
     if (info_dict['batch_idx'] + 1) % info_dict['log_interval'] == 0:
@@ -373,11 +364,4 @@ def log_per_save(writer, info_dict):
         for k in ['epoch', 'lr']:
             writer.add_scalar('{}/{}'.format(tag, k), info_dict[k], step + 1)
         for k, v in loss_dict.items():
-            value = v
-            if isinstance(value, torch.Tensor):
-                if value.ndim > 0:
-                    value = value.mean()
-                if value.requires_grad:
-                    value = value.detach()
-                value = value.item()
-            writer.add_scalar('{}/{}'.format(tag, k), value, step + 1)
+            writer.add_scalar('{}/{}'.format(tag, k), v, step + 1)
